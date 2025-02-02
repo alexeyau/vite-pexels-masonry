@@ -1,11 +1,25 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './Gallery.css'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+
+import { searchPhotos } from '@/api/pexels'
+import { Photo } from '@/types/pexels'
+
+import './Gallery.css'
+
 export default function Gallery() {
-  const [count, setCount] = useState(0)
+  const [photos, setPhotos] = useState<Photo[]>([]);
+
+  useEffect(() => {
+    const loadPhotos = async () => {
+      const initialPhotos = await searchPhotos({});
+      setPhotos(initialPhotos);
+    }
+
+    loadPhotos();
+  }, [])
 
   return (
     <>
@@ -19,12 +33,7 @@ export default function Gallery() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        {photos.length}
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
