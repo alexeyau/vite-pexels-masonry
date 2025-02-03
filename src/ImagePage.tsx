@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function Image() {
+export default function ImagePage() {
 
   return (
     <>
