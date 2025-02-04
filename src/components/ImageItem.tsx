@@ -7,6 +7,7 @@ type ImageItemProps = {
   className: string,
   columnWidth: number,
   rowHeight: number,
+  hide: boolean,
 }
 
 const getSize = (photo: Photo, itemWidth: number, rowHeight: number): number => {
@@ -25,6 +26,7 @@ const ImageItem = forwardRef(({
   className,
   columnWidth,
   rowHeight,
+  hide,
 }: ImageItemProps, ref: any) => {
   return (
     <div
@@ -34,12 +36,14 @@ const ImageItem = forwardRef(({
         gridRow: 'span ' + getSize(photo, columnWidth, rowHeight),
       }}
     >
-      <img
-        src={photo.src.medium}
-        alt={photo.alt}
-        loading="lazy"
-        decoding="async"
-      />
+      {!hide && (
+        <img
+          src={photo.src.medium}
+          alt={photo.alt}
+          loading="lazy"
+          decoding="async"
+        />
+      )}
     </div>
   );
 });

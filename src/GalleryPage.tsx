@@ -11,19 +11,23 @@ import viteLogo from '/vite.svg'
 import './Gallery.css'
 
 export default function GalleryPage() {
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
   const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [counter, setCounter] = useState(1);
   const initialized = useRef(false);
 
   const fetchPhotos = async () => {
     setIsLoading(true);
-    setCounter((count) => count + 1);
     try {
-      const photos = await searchPhotos({ page: counter });
-      setPhotos((prev) => [...prev, ...photos]);
-      setHasMore(photos.length > 0);
+      const {
+        photos,
+        totalResults,
+      } = await searchPhotos({ page });
+
+      setAllPhotos((prev) => [...prev, ...photos]);
+
+      setHasMore((allPhotos.length + photos.length) < totalResults);
     } catch (error) {
       console.error('Error fetching photos:', error);
     } finally {
@@ -33,11 +37,11 @@ export default function GalleryPage() {
   
   useEffect(() => {
     // prevent recall in dev mode
-    if (initialized.current) return;
+    if (initialized.current && page === 1) return;
     initialized.current = true;
 
     fetchPhotos();
-  }, []);
+  }, [page]);
 
   return (
     <>
@@ -49,13 +53,19 @@ export default function GalleryPage() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>{isLoading && 'isLoading'}</h1>
-      <h1>{hasMore && 'hasMore'}</h1>
+
       <form action="/search">
         <input type="text" name="q" />
       </form>
       <div className="card">
-        {photos.length && <MasonryGrid photos={photos} />}
+        <MasonryGrid
+          photos={allPhotos}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          handleScrollEnd={() => {
+            setPage((p) => p + 1);
+          }}
+        />
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more

@@ -1,4 +1,10 @@
-import { PexelsApiResponse } from "@/types/pexels";
+import {
+  DEFAULT_QUERY,
+  START_SEARCH_PAGE,
+  PER_SEARCH_PAGE
+ } from "@/types/constants";
+ 
+import { PexelsApiResponse, Photo } from "@/types/pexels";
 
 type SearchParams = {
     query?: string,
@@ -6,24 +12,26 @@ type SearchParams = {
     perPage?: string,
 };
 
+type PhotoResult = {
+  photos: Photo[],
+  totalResults: number,
+}
+
 export async function searchPhotos({
-  query = 'nature',
-  page = 1,
-  perPage = '17',
-}: SearchParams) {
+  query = DEFAULT_QUERY,
+  page = START_SEARCH_PAGE,
+  perPage = PER_SEARCH_PAGE,
+}: SearchParams): Promise<PhotoResult> {
     const apiKey = import.meta.env.VITE_PUBLIC_PEXELS_API_KEY as string;
   
     if (!apiKey) {
       throw new Error("NEXT_PUBLIC_PEXELS_API_KEY is not defined in environment variables");
     }
-
-    // const orientation = 'landscape';
     
     const params = new URLSearchParams({
       query,
       per_page: perPage,
       page: String(page),
-      // orientation
     });
   
     const res = await fetch(`https://api.pexels.com/v1/search?${params.toString()}`, {
@@ -34,5 +42,8 @@ export async function searchPhotos({
   
     const data: PexelsApiResponse = await res.json();
   
-    return data.photos;
+    return {
+      photos: data.photos,
+      totalResults: data.total_results,
+    }
 }

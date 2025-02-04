@@ -13,6 +13,23 @@ export const imageItemStyle = style({
     position: 'relative',
     overflow: 'hidden',
     borderRadius: '6px',
+    background: '#eee',
+});
+
+export const loadingStyle = style({
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: '6px',
+    background: '#eee',
+    gridRow: 'span 4',
+});
+
+export const loadingMockStyle = style({
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: '6px',
+    background: '#eee',
+    gridRow: 'span 3',
 });
 
 
