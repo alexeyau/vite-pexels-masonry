@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   GRID_GAP,
   ROW_HEIGHT,
   VIRTUALIZATION_LIMIT,
-  VIRT_GAP,
+  VIRT_PAGES_GAP,
+  SCROLL_GAP,
 } from '@/types/constants';
-import { Photo } from '@/types/pexels';
+import { useStateContext } from '@/StateContext.tsx';
+import { searchPhotos } from '@/api/pexels.ts';
 
 import ImageItem from '../ImageItem';
 
@@ -17,51 +18,62 @@ import {
   loadingMockStyle,
 } from './styles.css.ts';
 
-type MasonryGridProps = {
-  photos: Photo[],
-  handleScrollEnd: () => void,
-  isLoading: boolean,
-  hasMore: boolean,
-}
-
-const setSizes = (
-  wrapEl: HTMLDivElement | null,
-  setItemHeight: React.Dispatch<React.SetStateAction<number>>,
-  setWrapHeight: React.Dispatch<React.SetStateAction<number>>,
-  totalLength: number,
-) => {
-  if (!wrapEl) {
-    return;
-  }
-
-  const wrapElRect = wrapEl?.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const vTop = Math.max(wrapElRect.top, 0);
-  const vBottom = Math.min(wrapElRect.bottom, viewportHeight);
-  const wrapViewHeight = Math.max(vBottom - vTop, 0);
-
-  setItemHeight(wrapElRect.height / totalLength);
-  setWrapHeight(wrapViewHeight);
-}
-
-const MasonryGrid = ({ photos, handleScrollEnd, isLoading, hasMore }: MasonryGridProps) => {
+const MasonryGrid = () => {
+  const {
+    photos,
+    setPhotos,
+    searchQuery,
+  } = useStateContext();
   const [columnWidth, setColumnWidth] = useState(0);
+  const [pageNum, setPageNum] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [approximateItemHeight, setApproximateItemHeight] = useState(0);
   const [approximateViewHeight, setApproximateViewHeight] = useState(0);
-
   const [topVirtItemIndex, setTopVirtItemIndex] = useState(0);
   const [bottomVirtItemIndex, setBottomVirtItemIndex] = useState(0);
-
   const lastImageRef = useRef<HTMLDivElement & IntersectionObserver | null>(null);
   const mockRef = useRef<HTMLDivElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-
   const needVirtualisation = photos.length > VIRTUALIZATION_LIMIT;
+  const initialized = useRef(false);
+
+  const fetchPhotos = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const {
+        photos: photosPart,
+        totalResults,
+      } = await searchPhotos({ page: pageNum, query: searchQuery });
+
+      setPhotos((prev) => [...prev, ...photosPart]);
+      setHasMore((photos.length + photosPart.length) < totalResults);
+
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setPhotos]);
+
+  useEffect(() => {
+    // prevent recall in dev mode
+    if (initialized.current && pageNum === 1) return;
+    initialized.current = true;
+
+    fetchPhotos();
+  }, [pageNum, fetchPhotos]);
+
+  useEffect(() => {
+    setPageNum(1);
+    setPhotos([]);
+    fetchPhotos();
+  }, [searchQuery, fetchPhotos]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && hasMore) {
-        handleScrollEnd();
+        setPageNum((p) => p + 1);
       };
     });
 
@@ -70,12 +82,37 @@ const MasonryGrid = ({ photos, handleScrollEnd, isLoading, hasMore }: MasonryGri
       return () => observer.disconnect();
     }
 
+  }, [photos.length, hasMore]);
+
+
+  const setSizes = useCallback((
+    wrapEl: HTMLDivElement | null,
+    setItemHeight: React.Dispatch<React.SetStateAction<number>>,
+    setWrapHeight: React.Dispatch<React.SetStateAction<number>>,
+    totalLength: number,
+  ) => {
+    if (!wrapEl) {
+      return;
+    }
+
+    const wrapElRect = wrapEl?.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const vTop = Math.max(wrapElRect.top, 0);
+    const vBottom = Math.min(wrapElRect.bottom, viewportHeight);
+    const wrapViewHeight = Math.max(vBottom - vTop, 0);
+
+    setItemHeight(wrapElRect.height / totalLength);
+    setWrapHeight(wrapViewHeight);
   }, [photos.length]);
 
   useEffect(() => {
     const handleResize = () => {
       const el = mockRef.current && mockRef || lastImageRef.current && lastImageRef;
       setColumnWidth(el?.current?.getBoundingClientRect().width || 0);
+      if (needVirtualisation && wrapRef.current) {
+        setSizes(wrapRef.current, setApproximateItemHeight, setApproximateViewHeight, photos.length);
+        setLimits();
+      }
     }
 
     handleResize();
@@ -87,19 +124,29 @@ const MasonryGrid = ({ photos, handleScrollEnd, isLoading, hasMore }: MasonryGri
     };
   }, [lastImageRef.current, mockRef.current]);
 
+  const setLimits = useCallback(() => {
+    const currentViewIndex = Math.round(window.scrollY/approximateViewHeight);
+  
+    const topLimit = Math.max(0, Math.round((currentViewIndex - VIRT_PAGES_GAP) * approximateViewHeight / approximateItemHeight));
+    const bottomLimit = Math.round((currentViewIndex + VIRT_PAGES_GAP) * approximateViewHeight / approximateItemHeight);
+
+    setTopVirtItemIndex(topLimit);
+    setBottomVirtItemIndex(bottomLimit);
+  }, [approximateViewHeight, approximateItemHeight]);
+
   useEffect(() => {
     if (!needVirtualisation || !wrapRef.current) {
       return;
     }
 
     const onScroll = () => {
+      if (Math.round(window.scrollY) % SCROLL_GAP !== 0) {
+        return;
+      }
       if (!approximateViewHeight) {
         setSizes(wrapRef.current, setApproximateItemHeight, setApproximateViewHeight, photos.length);
       }
-      const currentViewIndex = Math.round(window.scrollY/approximateViewHeight);
-
-      setTopVirtItemIndex(Math.max(0, Math.round((currentViewIndex - VIRT_GAP) * approximateViewHeight / approximateItemHeight)));
-      setBottomVirtItemIndex(Math.round((currentViewIndex + VIRT_GAP) * approximateViewHeight / approximateItemHeight));
+      setLimits();
     }
 
     window.addEventListener('scroll', onScroll);
@@ -107,7 +154,7 @@ const MasonryGrid = ({ photos, handleScrollEnd, isLoading, hasMore }: MasonryGri
     return () => {
       window.removeEventListener('scroll', onScroll);
     }
-  }, [needVirtualisation, !approximateViewHeight, photos.length]);
+  }, [needVirtualisation, !approximateViewHeight, photos.length, columnWidth]);
 
   return (
     <div className={masonryGridStyle} ref={wrapRef}>

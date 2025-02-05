@@ -12,14 +12,13 @@ export const masonryGridStyle = style({
 export const imageItemStyle = style({
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: '6px',
-    background: '#eee',
+    borderRadius: '3px',
 });
 
 export const loadingStyle = style({
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: '6px',
+    borderRadius: '3px',
     background: '#eee',
     gridRow: 'span 4',
 });
@@ -27,7 +26,7 @@ export const loadingStyle = style({
 export const loadingMockStyle = style({
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: '6px',
+    borderRadius: '3px',
     background: '#eee',
     gridRow: 'span 3',
 });

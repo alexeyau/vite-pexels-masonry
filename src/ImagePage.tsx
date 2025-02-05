@@ -1,15 +1,24 @@
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useParams,
+} from 'react-router-dom';
+
+import FullImage from '@/components/FullImage/FullImage';
+import { usePhotoById } from '@/StateContext';
 
 export default function ImagePage() {
+  const { id } = useParams<{ id: string }>();
+  const photo = usePhotoById(Number(id));
 
   return (
     <>
-      <div>
-        Image P
-      </div>
-      <p className="read-the-docs">
-        <Link to='/'>LINK TO [MAIN]</Link>
+      <p>
+        <Link to='/'>
+          <span>← </span>
+          BACK
+        </Link>
       </p>
+      {photo ? <FullImage photo={photo} /> : 'Photo not found'}
     </>
   )
 }

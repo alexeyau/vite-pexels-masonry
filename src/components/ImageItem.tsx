@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Photo } from '@/types/pexels';
 
@@ -29,22 +30,23 @@ const ImageItem = forwardRef(({
   hide,
 }: ImageItemProps, ref: any) => {
   return (
-    <div
+    <Link
+      to={`img/${photo.id}`}
       className={className}
       ref={ref}
       style={{
         gridRow: 'span ' + getSize(photo, columnWidth, rowHeight),
+        backgroundColor: photo.avg_color,
       }}
     >
-      {!hide && (
         <img
           src={photo.src.medium}
           alt={photo.alt}
           loading="lazy"
           decoding="async"
+          style={{display: hide ? 'none' : 'block'}}
         />
-      )}
-    </div>
+    </Link>
   );
 });
 
