@@ -17,5 +17,5 @@ npm run preview
 - Lazy loading for additional images
 - Lazy loading for additional pade
 - Preconnect to Pexels
-- Store data with context (no external lib like instead of redux/zustand) to reduce build size
+- Store data with context (no external libs like redux/zustand) to reduce build size
 
