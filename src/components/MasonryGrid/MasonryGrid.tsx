@@ -5,6 +5,7 @@ import {
   VIRTUALIZATION_LIMIT,
   VIRT_PAGES_GAP,
   SCROLL_GAP,
+  FIRST_IMAGES_AMOUNT,
 } from '@/types/constants';
 import { useStateContext } from '@/StateContext.tsx';
 import { searchPhotos } from '@/api/pexels.ts';
@@ -16,6 +17,8 @@ import {
   imageItemStyle,
   loadingStyle,
   loadingMockStyle,
+  loadingMockAddStyle,
+  emptyResultStyle,
 } from './styles.css.ts';
 
 const MasonryGrid = () => {
@@ -25,6 +28,7 @@ const MasonryGrid = () => {
     searchQuery,
   } = useStateContext();
   const [columnWidth, setColumnWidth] = useState(0);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState(searchQuery);
   const [pageNum, setPageNum] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +50,8 @@ const MasonryGrid = () => {
         totalResults,
       } = await searchPhotos({ page: pageNum, query: searchQuery });
 
-      setPhotos((prev) => [...prev, ...photosPart]);
+      setPageNum((p) => p + 1);
+      setPhotos((prev) => [...prev, ...(photosPart || [])]);
       setHasMore((photos.length + photosPart.length) < totalResults);
 
     } catch (error) {
@@ -54,26 +59,30 @@ const MasonryGrid = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [setPhotos]);
+  }, [setPhotos, setHasMore, pageNum, setPageNum, photos, searchQuery]);
 
   useEffect(() => {
     // prevent recall in dev mode
-    if (initialized.current && pageNum === 1) return;
-    initialized.current = true;
+    if (!initialized.current) {
+      initialized.current = true;
 
-    fetchPhotos();
-  }, [pageNum, fetchPhotos]);
+      fetchPhotos();
+    } else {
+      if (searchQuery === currentSearchQuery) return;
 
-  useEffect(() => {
-    setPageNum(1);
-    setPhotos([]);
-    fetchPhotos();
+      setCurrentSearchQuery(searchQuery);
+      setPageNum(1);
+      setPhotos([]);
+      fetchPhotos();
+      setHasMore(true);
+    }
   }, [searchQuery, fetchPhotos]);
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && hasMore) {
-        setPageNum((p) => p + 1);
+        fetchPhotos();
       };
     });
 
@@ -158,6 +167,11 @@ const MasonryGrid = () => {
 
   return (
     <div className={masonryGridStyle} ref={wrapRef}>
+      {!isLoading && !photos.length && (
+        <div className={emptyResultStyle}>
+          No images found
+        </div>
+      )}
       {photos.map((photo, index) => {
         const hideByTop = index < topVirtItemIndex;
         const hideByBottom = !!bottomVirtItemIndex && (index > bottomVirtItemIndex);
@@ -170,6 +184,7 @@ const MasonryGrid = () => {
             columnWidth={columnWidth}
             ref={index === photos.length - 1 ? lastImageRef : null}
             rowHeight={GRID_GAP + ROW_HEIGHT}
+            isCriticalImage={index < FIRST_IMAGES_AMOUNT}
           />
         );
       })}
@@ -177,7 +192,7 @@ const MasonryGrid = () => {
         <>
           <div className={loadingStyle} ref={mockRef}></div>
           <div className={loadingMockStyle}></div>
-          <div className={loadingMockStyle}></div>
+          <div className={loadingMockAddStyle}></div>
         </>
       )}
     </div>

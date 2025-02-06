@@ -8,3 +8,4 @@ export const PER_SEARCH_PAGE = '20';
 export const VIRTUALIZATION_LIMIT = 100;
 export const VIRT_PAGES_GAP = 4;
 export const SCROLL_GAP = 10;
+export const FIRST_IMAGES_AMOUNT = 5;

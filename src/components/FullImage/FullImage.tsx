@@ -27,10 +27,8 @@ const FullImage = ({
         </div>
         <div className={imageWrapStyle}>
             <img
-            src={photo.src.large}
-            alt={photo.alt}
-            loading="lazy"
-            decoding="async"
+                src={photo.src.large}
+                alt={photo.alt}
             />
         </div>
     </>

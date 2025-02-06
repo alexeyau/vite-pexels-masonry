@@ -9,6 +9,7 @@ type ImageItemProps = {
   columnWidth: number,
   rowHeight: number,
   hide: boolean,
+  isCriticalImage: boolean,
 }
 
 const getSize = (photo: Photo, itemWidth: number, rowHeight: number): number => {
@@ -28,6 +29,7 @@ const ImageItem = forwardRef(({
   columnWidth,
   rowHeight,
   hide,
+  isCriticalImage,
 }: ImageItemProps, ref: any) => {
   return (
     <Link
@@ -42,8 +44,8 @@ const ImageItem = forwardRef(({
         <img
           src={photo.src.medium}
           alt={photo.alt}
-          loading="lazy"
-          decoding="async"
+          loading={isCriticalImage ? undefined : "lazy"}
+          decoding={isCriticalImage ? undefined : "async"}
           style={{display: hide ? 'none' : 'block'}}
         />
     </Link>

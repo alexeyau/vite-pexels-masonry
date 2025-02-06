@@ -36,3 +36,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+@keyframes backgroundAnimation {
+  0% {
+    background-color: #d3d3d3;
+  }
+  100% {
+    background-color: #696969;
+  }
+}
